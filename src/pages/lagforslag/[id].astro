@@ -1,0 +1,387 @@
+---
+// @ts-nocheck
+export const prerender = false
+
+import MainLayout from "../../layouts/MainLayout.astro"
+import LawTimeline from "../../components/LawTimeline.astro"
+
+import { getLawCase } from "../../lib/LawCase.js"
+import { buildLawTimeline } from "../../lib/lawTimeline.js"
+
+const { id } = Astro.params
+
+const lawCase = await getLawCase(id)
+
+const timeline = buildLawTimeline(lawCase)
+---
+
+<MainLayout>
+
+<article class="law-page">
+
+<header class="law-header">
+
+<h1>{lawCase.title}</h1>
+
+<div class="law-meta">
+
+<span>📅 {lawCase.date}</span>
+
+{lawCase.committeeName && (
+<span>🏛 {lawCase.committeeName}</span>
+)}
+
+</div>
+
+</header>
+
+
+{/* MOTION KOPPLAD TILL PROPOSITION */}
+
+{lawCase.motionBase && (
+
+<section class="law-related">
+
+<p>
+
+Denna {lawCase.type.toLowerCase()} avser  
+<strong>{lawCase.motionBase}</strong>
+
+</p>
+
+</section>
+
+)}
+
+
+{/* LAGPROCESS */}
+
+<section class="law-process">
+
+<h2>Lagprocess</h2>
+
+<LawTimeline steps={timeline} />
+
+</section>
+
+
+<div class="law-layout">
+
+
+{/* SIDOBAR */}
+
+<aside class="law-sidebar">
+
+<h3>Fakta</h3>
+
+<ul>
+
+<li>
+<strong>ID:</strong> {lawCase.id}
+</li>
+
+<li>
+<strong>Typ:</strong> {lawCase.type}
+</li>
+
+<li>
+<strong>Inlämnad:</strong> {lawCase.submitted}
+</li>
+
+{lawCase.tabled && (
+<li>
+<strong>Bordlagd:</strong> {lawCase.tabled}
+</li>
+)}
+
+{lawCase.referred && (
+<li>
+<strong>Hänvisad:</strong> {lawCase.referred}
+</li>
+)}
+
+{lawCase.committeeName && (
+<li>
+<strong>Utskott:</strong> {lawCase.committeeName}
+</li>
+)}
+
+{lawCase.motionCategory && (
+<li>
+<strong>Kategori:</strong> {lawCase.motionCategory}
+</li>
+)}
+
+</ul>
+
+</aside>
+
+
+{/* HUVUDINNEHÅLL */}
+
+<section class="law-main">
+
+
+{/* INTRESSENTER */}
+
+{lawCase.sponsors?.length > 0 && (
+
+<section class="law-section">
+
+<h2>Intressenter</h2>
+
+<ul class="sponsor-list">
+
+{lawCase.sponsors.map(p => (
+
+<li>
+
+<strong>{p.name}</strong>
+
+{p.party && (
+<span class="party">({p.party})</span>
+)}
+
+</li>
+
+))}
+
+</ul>
+
+</section>
+
+)}
+
+
+{/* FÖRSLAG */}
+
+{lawCase.proposals?.length > 0 && (
+
+<section class="law-section">
+
+<h2>Förslag till riksdagsbeslut</h2>
+
+<ol>
+
+{lawCase.proposals.map(p => (
+
+<li>{p.lydelse}</li>
+
+))}
+
+</ol>
+
+</section>
+
+)}
+
+
+{/* BETÄNKANDE */}
+
+{lawCase.report && (
+
+<section class="law-section">
+
+<h2>Utskottsbetänkande</h2>
+
+<p>
+
+<a href={`/lagforslag/${lawCase.report.id}`}>
+
+{lawCase.report.title}
+
+</a>
+
+</p>
+
+</section>
+
+)}
+{lawCase.committeeProposal?.length > 0 && (
+
+<section>
+
+<h2>Utskottets förslag</h2>
+
+<ol>
+
+{lawCase.committeeProposal.map(p => (
+
+<li>
+
+{p.text}
+
+{p.decision && (
+<span> — Beslut: {p.decision}</span>
+)}
+
+</li>
+
+))}
+
+</ol>
+
+</section>
+
+)}
+
+
+{/* DOKUMENT */}
+
+{lawCase.attachments?.length > 0 && (
+
+<section class="law-section">
+
+<h2>Dokument</h2>
+
+<ul>
+
+{lawCase.attachments.map(a => (
+
+<li>
+
+<a href={a.fil_url} target="_blank">
+
+{a.filtyp.toUpperCase()}
+
+</a>
+
+</li>
+
+))}
+
+</ul>
+
+</section>
+
+)}
+
+
+{/* HELA MOTIONEN / PROPOSITIONEN */}
+
+{lawCase.html && (
+
+<section class="law-section">
+
+<h2>Dokumenttext</h2>
+
+<div class="law-document" set:html={lawCase.html}></div>
+
+</section>
+
+)}
+
+</section>
+
+</div>
+
+</article>
+
+
+<style>
+
+.law-page{
+max-width:1100px;
+margin:auto;
+padding:40px 20px;
+}
+
+.law-header h1{
+font-size:2rem;
+margin-bottom:10px;
+}
+
+.law-meta{
+display:flex;
+gap:20px;
+color:#666;
+font-size:0.95rem;
+}
+
+.law-related{
+background:#eef4ff;
+padding:12px 16px;
+border-left:4px solid #005bbb;
+margin:20px 0;
+}
+
+.law-process{
+margin:30px 0;
+}
+
+.law-layout{
+display:grid;
+grid-template-columns:260px 1fr;
+gap:40px;
+}
+
+.law-sidebar{
+background:#f5f7fb;
+padding:20px;
+border-radius:8px;
+}
+
+.law-sidebar ul{
+list-style:none;
+padding:0;
+}
+
+.law-sidebar li{
+margin-bottom:8px;
+}
+
+.law-main{
+display:flex;
+flex-direction:column;
+gap:40px;
+}
+
+.law-section h2{
+border-bottom:2px solid #eee;
+padding-bottom:6px;
+margin-bottom:12px;
+}
+
+.sponsor-list{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:8px;
+}
+
+.party{
+color:#005bbb;
+font-weight:600;
+margin-left:6px;
+}
+
+.law-document{
+margin-top:20px;
+line-height:1.6;
+font-size:0.95rem;
+}
+
+.law-document h1{
+margin-top:30px;
+font-size:1.3rem;
+}
+
+.law-document h2{
+margin-top:20px;
+font-size:1.15rem;
+}
+
+.law-document p{
+margin-bottom:12px;
+}
+
+@media (max-width:900px){
+
+.law-layout{
+grid-template-columns:1fr;
+}
+
+}
+
+</style>
+
+</MainLayout>

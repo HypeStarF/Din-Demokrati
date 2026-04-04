@@ -1,0 +1,32 @@
+---
+type Step = {
+label: string
+completed: boolean
+}
+
+const { steps }: { steps: Step[] } = Astro.props;
+---
+
+<div class="journey">
+
+{steps.map((step, i) => (
+
+<div class="journey-step">
+
+<div class={`journey-dot ${step.completed ? "done" : ""}`}>
+{step.completed ? "✓" : ""}
+</div>
+
+<div class="journey-label">
+{step.label}
+</div>
+
+{i < steps.length - 1 && (
+<div class={`journey-line ${step.completed ? "done" : ""}`}></div>
+)}
+
+</div>
+
+))}
+
+</div>

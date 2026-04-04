@@ -1,0 +1,24 @@
+---
+type Step = {
+label: string
+completed: boolean
+};
+
+const { steps }: { steps: Step[] } = Astro.props;
+---
+
+<div class="law-tracker">
+
+{steps.map((step) => (
+
+<div class={`law-step ${step.completed ? "completed" : ""}`}>
+
+<div class="law-dot"></div>
+
+<span>{step.label}</span>
+
+</div>
+
+))}
+
+</div>

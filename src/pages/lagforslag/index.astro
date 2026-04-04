@@ -1,0 +1,177 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import {
+getLatestMotions,
+getLatestPropositions
+} from "../../lib/riksdagen.js";
+
+type Document = {
+id:string
+title:string
+date:string
+type:string
+url:string
+}
+
+const motions:Document[] = await getLatestMotions();
+const props:Document[] = await getLatestPropositions();
+
+const docs = [...motions,...props]
+.sort((a,b)=> new Date(b.date).getTime() - new Date(a.date).getTime());
+---
+
+<MainLayout>
+
+<h1>Lagförslag</h1>
+
+<input
+id="search"
+type="text"
+placeholder="Sök lagförslag..."
+class="search"
+/>
+
+<div class="filters">
+
+<button data-filter="all">Alla</button>
+<button data-filter="prop">Propositioner</button>
+<button data-filter="mot">Motioner</button>
+
+</div>
+
+<ul id="results">
+
+{docs.map(doc => (
+
+<li
+data-type={doc.type}
+data-title={doc.title.toLowerCase()}
+>
+
+<a href={`/lagforslag/${doc.id}`}>
+
+<strong>
+{doc.type === "prop" ? "Proposition" : "Motion"}
+</strong>
+
+<br/>
+
+{doc.title}
+
+<br/>
+
+<span class="date">{doc.date}</span>
+
+</a>
+
+</li>
+
+))}
+
+</ul>
+
+<div class="pagination">
+
+<button id="prev">← Föregående</button>
+
+<span id="page-info"></span>
+
+<button id="next">Nästa →</button>
+
+</div>
+
+
+<script>
+
+const search = document.getElementById("search") as HTMLInputElement | null;
+const items = Array.from(document.querySelectorAll("#results li")) as HTMLLIElement[];
+const buttons = document.querySelectorAll(".filters button") as NodeListOf<HTMLButtonElement>;
+
+const prev = document.getElementById("prev") as HTMLButtonElement;
+const next = document.getElementById("next") as HTMLButtonElement;
+const pageInfo = document.getElementById("page-info") as HTMLElement;
+
+let currentFilter = "all";
+
+let currentPage = 1;
+const perPage = 10;
+
+function getFiltered(){
+
+if(!search) return items;
+
+const query = search.value.toLowerCase();
+
+return items.filter(item => {
+
+const title = item.dataset.title ?? "";
+const type = item.dataset.type ?? "";
+
+const matchSearch = title.includes(query);
+const matchFilter = currentFilter === "all" || type === currentFilter;
+
+return matchSearch && matchFilter;
+
+});
+
+}
+
+function render(){
+
+items.forEach(i => i.style.display = "none");
+
+const filtered = getFiltered();
+
+const totalPages = Math.ceil(filtered.length / perPage);
+
+if(currentPage > totalPages) currentPage = totalPages || 1;
+
+const start = (currentPage - 1) * perPage;
+const end = start + perPage;
+
+filtered.slice(start,end).forEach(item => {
+item.style.display = "block";
+});
+
+pageInfo.textContent = `Sida ${currentPage} / ${totalPages || 1}`;
+
+prev.disabled = currentPage === 1;
+next.disabled = currentPage === totalPages;
+
+}
+
+if(search){
+search.addEventListener("input", () => {
+currentPage = 1;
+render();
+});
+}
+
+buttons.forEach(btn => {
+
+btn.addEventListener("click", () => {
+
+currentFilter = btn.dataset.filter ?? "all";
+currentPage = 1;
+render();
+
+});
+
+});
+
+prev.addEventListener("click", () => {
+currentPage--;
+render();
+});
+
+next.addEventListener("click", () => {
+currentPage++;
+render();
+});
+
+render();
+
+</script>
+
+
+</MainLayout>

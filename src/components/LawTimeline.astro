@@ -1,0 +1,51 @@
+---
+type Step = {
+  label: string
+  completed: boolean
+  date?: string
+}
+
+/* fallback om props saknas */
+
+const steps: Step[] = (Astro.props.steps ?? []) as Step[];
+
+/* hitta aktuellt steg */
+
+let currentIndex = steps.findIndex((step, i) =>
+  !step.completed && steps[i - 1]?.completed
+);
+
+if (currentIndex === -1) {
+  currentIndex = steps.length - 1;
+}
+---
+
+<div class="law-timeline">
+
+{steps.map((step, i) => (
+
+  <div class="law-step">
+
+    <div
+      class={`law-circle ${step.completed ? "done" : ""} ${i === currentIndex ? "current" : ""}`}
+    ></div>
+
+    <div class="law-label">
+      {step.label}
+    </div>
+
+    {step.date && (
+      <div class="law-date">
+        {step.date}
+      </div>
+    )}
+
+    {i < steps.length - 1 && (
+      <div class={`law-bar ${step.completed ? "done" : ""}`}></div>
+    )}
+
+  </div>
+
+))}
+
+</div>
