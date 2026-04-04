@@ -1,307 +1,278 @@
-function ensureArray(v){
-if(!v) return []
-return Array.isArray(v) ? v : [v]
-}
-
-async function fetchJSON(url){
-const res = await fetch(url)
-if(!res.ok) throw new Error("API error: " + url)
-return res.json()
-}
-
+const API_BASE = "https://data.riksdagen.se";
 
 /* =================================
-FALLBACK – SÖK BETÄNKANDE
+   GENERELLA HELPERS
 ================================= */
 
-async function findCommitteeReportFallback(docId, rm){
-
-try{
-
-const data = await fetchJSON(
-`https://data.riksdagen.se/dokumentlista/?doktyp=bet&rm=${rm}&utformat=json`
-)
-
-let reports = ensureArray(data?.dokumentlista?.dokument)
-
-for(const rep of reports){
-
-try{
-
-const statusData = await fetchJSON(
-`https://data.riksdagen.se/dokumentstatus/${rep.dok_id}.json`
-)
-
-let refs = ensureArray(
-statusData?.dokumentstatus?.dokreferens?.referens
-)
-
-for(const r of refs){
-
-if(r.dok_id === docId || r.relaterat_id === docId){
-
-return {
-id: rep.dok_id,
-title: rep.titel
+function toArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
+function firstDate(value) {
+  return value?.split(" ")?.[0] ?? null;
 }
 
+function toInt(value) {
+  const n = parseInt(value, 10);
+  return Number.isNaN(n) ? 0 : n;
 }
 
-}catch(e){ continue }
-
+function normalizeDocType(docType) {
+  if (docType === "prop") return "Proposition";
+  if (docType === "mot") return "Motion";
+  return docType || "Dokument";
 }
-
-}catch(e){}
-
-return null
-}
-
 
 /* =================================
-HÄMTA ALLA DOKUMENT I BETÄNKANDE
+   FETCH HELPERS
 ================================= */
 
-async function getDocumentsInReport(reportId){
+async function fetchJSON(url) {
+  const res = await fetch(url);
 
-const data = await fetchJSON(
-`https://data.riksdagen.se/dokumentstatus/${reportId}.json`
-)
+  if (!res.ok) {
+    throw new Error(`API error ${res.status}: ${url}`);
+  }
 
-let refs = ensureArray(
-data?.dokumentstatus?.dokreferens?.referens
-)
-
-const docs = []
-
-refs.forEach(r=>{
-
-if(r.ref_dok_typ === "prop" || r.ref_dok_typ === "mot"){
-
-docs.push({
-id: r.ref_dok_id,
-title: r.ref_dok_titel,
-type: r.ref_dok_typ
-})
-
+  return res.json();
 }
 
-})
-
-return docs
+async function fetchDocumentStatus(docId) {
+  return fetchJSON(`${API_BASE}/dokumentstatus/${docId}.json`);
 }
 
+async function fetchDocumentList(params) {
+  return fetchJSON(`${API_BASE}/dokumentlista/?${params}&utformat=json`);
+}
+
+async function fetchVoteListByDocId(docId) {
+  return fetchJSON(`${API_BASE}/voteringlista/?dok_id=${docId}&utformat=json`);
+}
 
 /* =================================
-HÄMTA VOTERING
+   PARSERS / NORMALISERING
 ================================= */
 
-async function getVotes(reportId){
-
-const data = await fetchJSON(
-`https://data.riksdagen.se/voteringlista/?dok_id=${reportId}&utformat=json`
-)
-
-let votes = ensureArray(
-data?.voteringlista?.votering
-)
-
-return votes.map(v=>({
-title: v.beteckning,
-date: v.datum,
-yes: parseInt(v.ja) || 0,
-no: parseInt(v.nej) || 0,
-abstain: parseInt(v.avstar) || 0
-}))
+function parseSponsors(status) {
+  return toArray(status?.dokintressent?.intressent).map((person) => ({
+    name: person.namn,
+    party: person.partibet,
+  }));
 }
 
+function parseProposals(status) {
+  return toArray(status?.dokforslag?.forslag);
+}
+
+function parseAttachments(status) {
+  return toArray(status?.dokument?.dokumentbilaga?.bilaga)
+    .map((attachment) => ({
+      filtyp: attachment.filtyp || "",
+      fil_url: attachment.fil_url || attachment.url || "",
+    }))
+    .filter((attachment) => attachment.fil_url);
+}
+
+function parseReferences(status) {
+  return toArray(status?.dokreferens?.referens);
+}
+
+function parseReportFromReferences(refs) {
+  const reportRef = refs.find((ref) => ref.ref_dok_typ === "bet");
+
+  if (!reportRef) return null;
+
+  return {
+    id: reportRef.ref_dok_id,
+    title: reportRef.ref_dok_titel,
+    bet: reportRef.ref_dok_bet,
+  };
+}
+
+function parseRelatedDocumentsFromReferences(refs) {
+  return refs
+    .filter((ref) => ref.ref_dok_typ === "prop" || ref.ref_dok_typ === "mot")
+    .map((ref) => ({
+      id: ref.ref_dok_id,
+      title: ref.ref_dok_titel,
+      type: ref.ref_dok_typ,
+    }));
+}
+
+function parseVotes(voteData) {
+  return toArray(voteData?.voteringlista?.votering).map((vote) => ({
+    title: vote.beteckning,
+    date: vote.datum,
+    yes: toInt(vote.ja),
+    no: toInt(vote.nej),
+    abstain: toInt(vote.avstar),
+  }));
+}
+
+function parseCommitteeProposal(statusData) {
+  return toArray(statusData?.dokumentstatus?.dokforslag?.forslag).map(
+    (proposal) => ({
+      punkt: proposal.nummer,
+      text: proposal.lydelse,
+      decision: proposal.kammaren || null,
+    })
+  );
+}
+
+function computeStage({ report, votes, committeeProposal }) {
+  const hasDecision = committeeProposal.some(
+    (proposal) => proposal.decision && proposal.decision !== ""
+  );
+
+  if (hasDecision) return "decision";
+  if (votes.length > 0) return "vote";
+  if (report) return "report";
+  return "proposal";
+}
 
 /* =================================
-UTSKOTTETS FÖRSLAG
+   API-SPECIFIKA HJÄLPFUNKTIONER
 ================================= */
 
-async function getCommitteeProposal(reportId){
+async function findCommitteeReportFallback(docId, rm) {
+  if (!rm) return null;
 
-const data = await fetchJSON(
-`https://data.riksdagen.se/dokumentstatus/${reportId}.json`
-)
+  try {
+    const data = await fetchDocumentList(`doktyp=bet&rm=${rm}`);
+    const reports = toArray(data?.dokumentlista?.dokument);
 
-let proposals = ensureArray(
-data?.dokumentstatus?.dokforslag?.forslag
-)
+    for (const report of reports) {
+      try {
+        const statusData = await fetchDocumentStatus(report.dok_id);
+        const refs = parseReferences(statusData?.dokumentstatus);
 
-return proposals.map(p=>({
-punkt: p.nummer,
-text: p.lydelse,
-decision: p.kammaren || null
-}))
+        const matchesCurrentDoc = refs.some(
+          (ref) => ref.dok_id === docId || ref.relaterat_id === docId
+        );
+
+        if (matchesCurrentDoc) {
+          return {
+            id: report.dok_id,
+            title: report.titel,
+          };
+        }
+      } catch {
+        continue;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
+async function getDocumentsInReport(reportId) {
+  const data = await fetchDocumentStatus(reportId);
+  const status = data?.dokumentstatus || {};
+  const refs = parseReferences(status);
+
+  return parseRelatedDocumentsFromReferences(refs);
+}
+
+async function getVotes(reportId) {
+  const data = await fetchVoteListByDocId(reportId);
+  return parseVotes(data);
+}
+
+async function getCommitteeProposal(reportId) {
+  const data = await fetchDocumentStatus(reportId);
+  return parseCommitteeProposal(data);
+}
 
 /* =================================
-HUVUDFUNKTION
+   HUVUDFUNKTION
 ================================= */
 
-export async function getLawCase(id){
+export async function getLawCase(id) {
+  const data = await fetchDocumentStatus(id);
 
-const data = await fetchJSON(
-`https://data.riksdagen.se/dokumentstatus/${id}.json`
-)
+  const status = data?.dokumentstatus || {};
+  const doc = status?.dokument || {};
 
-const status = data?.dokumentstatus || {}
-const doc = status?.dokument || {}
+  const refs = parseReferences(status);
 
+  const docType = doc.typ || null;
+  const type = normalizeDocType(docType);
+  const date = firstDate(doc.datum);
 
+  let report = parseReportFromReferences(refs);
 
-/* ========================
-GRUNDINFO
-======================== */
+  if (!report && doc.rm) {
+    report = await findCommitteeReportFallback(doc.dok_id, doc.rm);
+  }
 
-const type = doc.typ === "prop" ? "Proposition" : "Motion"
-const date = doc.datum?.split(" ")[0]
+  let relatedDocs = [];
+  let votes = [];
+  let committeeProposal = [];
 
+  if (report?.id) {
+    const [relatedDocsResult, votesResult, committeeProposalResult] =
+      await Promise.all([
+        getDocumentsInReport(report.id),
+        getVotes(report.id),
+        getCommitteeProposal(report.id),
+      ]);
 
+    relatedDocs = relatedDocsResult;
+    votes = votesResult;
+    committeeProposal = committeeProposalResult;
+  }
 
-/* ========================
-BETÄNKANDE (PRIMÄR)
-======================== */
+  const sponsors = parseSponsors(status);
+  const proposals = parseProposals(status);
+  const attachments = parseAttachments(status);
 
-let refs = ensureArray(status?.dokreferens?.referens)
+  const stage = computeStage({
+    report,
+    votes,
+    committeeProposal,
+  });
 
-let report = null
+  const lawCase = {
+    id: doc.dok_id,
+    title: doc.titel,
+    docType,
+    type,
+    date,
 
-for(const r of refs){
+    committee: doc.organ,
+    committeeName: doc.organ,
 
-if(r.ref_dok_typ === "bet"){
+    submitted: doc.datum || null,
+    tabled: doc.systemdatum || null,
+    referred: status?.behandlas_i || null,
+    motionCategory: doc.subtyp || null,
 
-report = {
-id: r.ref_dok_id,
-title: r.ref_dok_titel,
-bet: r.ref_dok_bet
-}
+    motionBase: null,
 
-break
-}
+    report,
+    relatedDocs,
+    votes,
+    committeeProposal,
 
-}
+    stage,
 
+    sponsors,
+    proposals,
+    attachments,
 
+    html: doc.html || null,
+  };
 
-/* ========================
-FALLBACK
-======================== */
+  console.log("LAWCASE:", {
+    id: lawCase.id,
+    stage: lawCase.stage,
+    report: !!lawCase.report,
+    votes: lawCase.votes.length,
+    decision: lawCase.committeeProposal.length,
+  });
 
-if(!report && doc.rm){
-report = await findCommitteeReportFallback(doc.dok_id, doc.rm)
-}
-
-
-
-/* ========================
-RELATERAT + VOTERING + FÖRSLAG
-======================== */
-
-let relatedDocs = []
-let votes = []
-let committeeProposal = []
-
-if(report){
-
-relatedDocs = await getDocumentsInReport(report.id)
-votes = await getVotes(report.id)
-committeeProposal = await getCommitteeProposal(report.id)
-
-}
-
-
-
-/* ========================
-INTRESSENTER
-======================== */
-
-let sponsors = ensureArray(
-status?.dokintressent?.intressent
-).map(i=>({
-name: i.namn,
-party: i.partibet
-}))
-
-
-
-/* ========================
-YRKANDEN
-======================== */
-
-let proposals = ensureArray(
-status?.dokforslag?.forslag
-)
-
-
-
-/* ========================
-STATUS (VIKTIGASTE DELEN)
-======================== */
-
-let stage = "proposal"
-
-const hasDecision = committeeProposal.some(p =>
-p.decision && p.decision !== ""
-)
-
-const hasVote = votes.length > 0
-
-if(hasDecision){
-stage = "decision"
-}
-else if(hasVote){
-stage = "vote"
-}
-else if(report){
-stage = "report"
-}
-
-
-
-/* ========================
-RESULTAT
-======================== */
-
-const lawCase = {
-
-id: doc.dok_id,
-title: doc.titel,
-type,
-date,
-
-committee: doc.organ,
-
-report,
-
-relatedDocs,
-votes,
-committeeProposal,
-
-stage, // 🔥 central
-
-sponsors,
-proposals,
-
-html: doc.html
-
-}
-
-
-/* DEBUG */
-
-console.log("LAWCASE:",{
-id: lawCase.id,
-stage: lawCase.stage,
-report: !!lawCase.report,
-votes: lawCase.votes.length,
-decision: lawCase.committeeProposal.length
-})
-
-return lawCase
-
+  return lawCase;
 }

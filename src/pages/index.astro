@@ -29,11 +29,11 @@ const latestDocs = filtered.slice(0,6)
 /* tidslinje */
 
 const timeline = latestDocs.map(doc => ({
-id: doc.dok_id,
-title: doc.titel,
-date: doc.datum,
-type: doc.doktyp,
-url: `/lagforslag/${doc.dok_id}`
+  id: doc.dok_id,
+  title: doc.titel,
+  date: doc.datum,
+  type: doc.doktyp,
+  url: `/lagforslag/${doc.dok_id}`
 }))
 ---
 
@@ -73,7 +73,7 @@ url={`/lagforslag/${doc.dok_id}`}
 
 <h2>Vad händer i riksdagen</h2>
 
-<Timeline items={timeline} />
+<Timeline steps={timeline} />
 
 </section>
 

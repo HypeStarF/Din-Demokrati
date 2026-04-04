@@ -1,8 +1,15 @@
 export function buildLawTimeline(lawCase){
 
+const firstLabel =
+  lawCase.docType === "prop"
+    ? "Proposition"
+    : lawCase.docType === "mot"
+      ? "Motion"
+      : lawCase.type || "Dokument"
+
 const steps=[
 
-{ label: lawCase.type === "prop" ? "Proposition" : "Motion" },
+{ label: firstLabel },
 { label:"Utskottsbehandling" },
 { label:"Betänkande" },
 { label:"Debatt" },
