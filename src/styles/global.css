@@ -1,3 +1,36 @@
+body{
+margin:0;
+font-family:system-ui, sans-serif;
+background:#ffffff;
+color:#111;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+padding:20px;
+}
+
+
+/* ===============================
+   NAVBAR / LOGO
+================================ */
+
+.navbar{
+background:#1B4F9C;
+color:white;
+}
+
+.nav-inner{
+max-width:1100px;
+margin:auto;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px;
+gap:20px;
+}
+
 .logo-wrapper{
 display:flex;
 align-items:center;
@@ -8,11 +41,23 @@ font-weight:700;
 font-size:20px;
 }
 
+.logo{
+font-weight:700;
+font-size:20px;
+color:white;
+text-decoration:none;
+}
+
+.logo-text{
+color:white;
+}
+
 .flag{
 width:28px;
 height:18px;
 background:#006AA7;
 position:relative;
+flex-shrink:0;
 }
 
 .flag::before{
@@ -32,6 +77,69 @@ height:4px;
 width:100%;
 top:40%;
 }
+
+.nav-links{
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+}
+
+.nav-links a{
+color:white;
+text-decoration:none;
+font-weight:500;
+}
+
+.nav-links a:hover{
+color:#F2C94C;
+}
+
+
+/* ===============================
+   FOOTER
+================================ */
+
+.footer{
+margin-top:60px;
+padding:30px;
+text-align:center;
+background:#f5f5f5;
+}
+
+
+/* ===============================
+   HERO
+================================ */
+
+.hero{
+padding:40px;
+background:#f6f8fb;
+border-radius:10px;
+margin-bottom:40px;
+}
+
+.hero h1{
+margin-top:0;
+font-size:32px;
+}
+
+.hero p{
+font-size:18px;
+color:#444;
+}
+
+
+/* ===============================
+   ARTICLE CARDS
+================================ */
+
+.article-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:20px;
+margin-top:20px;
+}
+
 .article-card{
 display:block;
 border:1px solid #eee;
@@ -62,79 +170,12 @@ color:#555;
 font-size:13px;
 color:#888;
 }
-.hero{
-padding:40px;
-background:#f6f8fb;
-border-radius:10px;
-margin-bottom:40px;
-}
 
-.hero h1{
-margin-top:0;
-font-size:32px;
-}
 
-.hero p{
-font-size:18px;
-color:#444;
-}
-body{
-margin:0;
-font-family:system-ui, sans-serif;
-background:#ffffff;
-color:#111;
-}
+/* ===============================
+   HOMEPAGE TIMELINE
+================================ */
 
-.container{
-max-width:1100px;
-margin:auto;
-padding:20px;
-}
-
-.navbar{
-background:#1B4F9C;
-color:white;
-}
-
-.nav-inner{
-max-width:1100px;
-margin:auto;
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:14px;
-}
-
-.logo{
-font-weight:700;
-font-size:20px;
-color:white;
-text-decoration:none;
-}
-
-.nav-links a{
-margin-left:20px;
-color:white;
-text-decoration:none;
-font-weight:500;
-}
-
-.nav-links a:hover{
-color:#F2C94C;
-}
-
-.footer{
-margin-top:60px;
-padding:30px;
-text-align:center;
-background:#f5f5f5;
-}
-.article-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-gap:20px;
-margin-top:20px;
-}
 .timeline{
 position:relative;
 margin-top:30px;
@@ -145,6 +186,10 @@ border-left:2px solid #e5e5e5;
 .timeline-item{
 position:relative;
 margin-bottom:30px;
+}
+
+.timeline-item:last-child{
+margin-bottom:0;
 }
 
 .timeline-dot{
@@ -162,212 +207,32 @@ margin:5px 0;
 font-size:18px;
 }
 
-.timeline-date{
-font-size:13px;
-color:#888;
-}
-
 .timeline-content a{
 color:#1B4F9C;
 font-weight:500;
 text-decoration:none;
 }
-.law-tracker{
-display:flex;
-justify-content:space-between;
-margin:30px 0;
-position:relative;
+
+.timeline-content a:hover{
+text-decoration:underline;
 }
 
-.law-step{
-text-align:center;
-flex:1;
-position:relative;
-font-size:14px;
+.timeline-date{
+font-size:13px;
+color:#888;
 }
 
-.law-dot{
-width:14px;
-height:14px;
-border-radius:50%;
-background:#ccc;
-margin:auto;
-margin-bottom:8px;
-}
-
-.law-step.completed .law-dot{
-background:#1B4F9C;
-}
-
-.law-step::after{
-content:"";
-position:absolute;
-top:7px;
-left:50%;
-width:100%;
-height:2px;
-background:#ddd;
-z-index:-1;
-}
-
-.law-step:last-child::after{
-display:none;
-}
-.law-tracker{
-display:flex;
-justify-content:space-between;
-margin:40px 0;
-}
-
-.law-step{
-flex:1;
-text-align:center;
-font-size:14px;
-}
-
-.law-dot{
-width:14px;
-height:14px;
-border-radius:50%;
-background:#ccc;
-margin:auto;
-margin-bottom:8px;
-}
-
-.law-step.completed .law-dot{
-background:#1B4F9C;
-}
-.law-timeline{
-display:flex;
-align-items:flex-start;
-justify-content:space-between;
-margin:60px 0;
-position:relative;
-}
-
-.law-step{
-flex:1;
-text-align:center;
-position:relative;
-}
-
-.law-circle{
-width:18px;
-height:18px;
-border-radius:50%;
-background:#e5e5e5;
-margin:0 auto;
-transition:all .25s;
-}
-
-.law-circle.done{
-background:#1B4F9C;
-box-shadow:0 0 0 6px rgba(27,79,156,0.15);
-}
-
-.law-bar{
-position:absolute;
-top:8px;
-left:50%;
-width:100%;
-height:3px;
-background:#e5e5e5;
-z-index:-1;
-}
-
-.law-bar.done{
-background:#1B4F9C;
-}
-
-.law-label{
-margin-top:12px;
-font-size:14px;
-font-weight:600;
-}
-
-.law-date{
-font-size:12px;
+.timeline-type{
+font-size:13px;
 color:#666;
 margin-top:4px;
 }
 
-.law-step:hover .law-circle{
-transform:scale(1.25);
-}
-
-
-/* =================================
-   RESPONSIVE
-================================= */
-
-@media (max-width:800px){
-
-.law-timeline{
-flex-direction:column;
-gap:25px;
-}
-
-.law-bar{
-display:none;
-}
-
-.timeline-date{
-min-width:70px;
-}
-
-}
-/* ===============================
-   CURRENT STEP GLOW
-================================ */
-
-.law-circle.current{
-background:#1B4F9C;
-box-shadow:
-0 0 0 6px rgba(27,79,156,0.2),
-0 0 12px rgba(27,79,156,0.5);
-animation:pulse 2s infinite;
-}
 
 /* ===============================
-   PROGRESS ANIMATION
+   SEARCH / FILTER / RESULTS
 ================================ */
 
-.law-bar.done{
-background:#1B4F9C;
-animation:progressGrow .6s ease-out;
-}
-
-@keyframes progressGrow{
-from{
-width:0%;
-}
-to{
-width:100%;
-}
-}
-
-/* ===============================
-   PULSE EFFECT
-================================ */
-
-@keyframes pulse{
-
-0%{
-box-shadow:
-0 0 0 0 rgba(27,79,156,0.6);
-}
-
-70%{
-box-shadow:
-0 0 0 10px rgba(27,79,156,0);
-}
-
-100%{
-box-shadow:
-0 0 0 0 rgba(27,79,156,0);
-}
-
-}
 .search{
 width:100%;
 padding:12px;
@@ -375,10 +240,12 @@ margin:20px 0;
 font-size:16px;
 border:1px solid #ccc;
 border-radius:6px;
+box-sizing:border-box;
 }
 
 .filters{
 display:flex;
+flex-wrap:wrap;
 gap:10px;
 margin-bottom:20px;
 }
@@ -398,6 +265,7 @@ background:#ddd;
 #results{
 list-style:none;
 padding:0;
+margin:0;
 }
 
 #results li{
@@ -405,16 +273,33 @@ padding:16px;
 border-bottom:1px solid #eee;
 }
 
+#results a{
+color:inherit;
+text-decoration:none;
+display:block;
+}
+
+#results a:hover{
+color:#1B4F9C;
+}
+
 .date{
 color:#777;
 font-size:13px;
 }
+
+
+/* ===============================
+   PAGINATION
+================================ */
+
 .pagination{
 display:flex;
 justify-content:center;
 align-items:center;
 gap:20px;
 margin-top:30px;
+flex-wrap:wrap;
 }
 
 .pagination button{
@@ -436,5 +321,19 @@ font-weight:500;
 }
 
 
+/* ===============================
+   RESPONSIVE
+================================ */
 
+@media (max-width:800px){
 
+.nav-inner{
+flex-direction:column;
+align-items:flex-start;
+}
+
+.timeline-date{
+min-width:70px;
+}
+
+}
