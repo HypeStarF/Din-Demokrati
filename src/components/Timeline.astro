@@ -7,31 +7,35 @@ type Item = {
   url: string
 }
 
-const items: Item[] = (Astro.props.items ?? []) as Item[];
+const items: Item[] = (Astro.props.items ?? []) as Item[]
 ---
 
 <div class="timeline">
-  {items.map((item) => (
-    <div class="timeline-item">
-      <div class="timeline-dot"></div>
+  {items.length > 0 ? (
+    items.map((item) => (
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
 
-      <div class="timeline-content">
-        {item.date && <div class="timeline-date">{item.date}</div>}
+        <div class="timeline-content">
+          {item.date && <div class="timeline-date">{item.date}</div>}
 
-        <h3>
-          <a href={item.url}>{item.title}</a>
-        </h3>
+          <h3>
+            <a href={item.url}>{item.title}</a>
+          </h3>
 
-        {item.type && (
-          <div class="timeline-type">
-            {item.type === "prop"
-              ? "Proposition"
-              : item.type === "mot"
-                ? "Motion"
-                : item.type}
-          </div>
-        )}
+          {item.type && (
+            <div class="timeline-type">
+              {item.type === "prop"
+                ? "Proposition"
+                : item.type === "mot"
+                  ? "Motion"
+                  : item.type}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  ))}
+    ))
+  ) : (
+    <p>Inget att visa just nu.</p>
+  )}
 </div>

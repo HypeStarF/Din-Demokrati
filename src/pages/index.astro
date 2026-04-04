@@ -6,29 +6,41 @@ import MainLayout from "../layouts/MainLayout.astro"
 import ArticleCard from "../components/ArticleCard.astro"
 import Timeline from "../components/Timeline.astro"
 
-/* hämta senaste dokument */
+/* hämta senaste motioner + propositioner direkt från API:t */
 
-const res = await fetch(
-"https://data.riksdagen.se/dokumentlista/?sort=datum&sortorder=desc&utformat=json"
-)
+const [motRes, propRes] = await Promise.all([
+  fetch(
+    "https://data.riksdagen.se/dokumentlista/?doktyp=mot&sort=datum&sortorder=desc&utformat=json"
+  ),
+  fetch(
+    "https://data.riksdagen.se/dokumentlista/?doktyp=prop&sort=datum&sortorder=desc&utformat=json"
+  )
+])
 
-const data = await res.json()
+const motData = await motRes.json()
+const propData = await propRes.json()
 
-const docs = data?.dokumentlista?.dokument || []
+const motDocsRaw = motData?.dokumentlista?.dokument ?? []
+const propDocsRaw = propData?.dokumentlista?.dokument ?? []
 
-/* filtrera motioner + propositioner */
+const motDocs = Array.isArray(motDocsRaw) ? motDocsRaw : [motDocsRaw]
+const propDocs = Array.isArray(propDocsRaw) ? propDocsRaw : [propDocsRaw]
 
-const filtered = docs.filter(d =>
-d.doktyp === "mot" || d.doktyp === "prop"
-)
+/* slå ihop, sortera senaste först */
+
+const filtered = [...motDocs, ...propDocs].sort((a, b) => {
+  const aDate = new Date(a?.datum || 0).getTime()
+  const bDate = new Date(b?.datum || 0).getTime()
+  return bDate - aDate
+})
 
 /* senaste dokument */
 
-const latestDocs = filtered.slice(0,6)
+const latestDocs = filtered.slice(0, 6)
 
 /* tidslinje */
 
-const timeline = latestDocs.map(doc => ({
+const timeline = latestDocs.map((doc) => ({
   id: doc.dok_id,
   title: doc.titel,
   date: doc.datum,
@@ -38,43 +50,38 @@ const timeline = latestDocs.map(doc => ({
 ---
 
 <MainLayout>
+  <section class="hero">
+    <h1>Din Demokrati</h1>
 
-<section class="hero">
+    <p>
+      Följ lagförslag, propositioner och omröstningar i Sveriges riksdag.
+    </p>
+  </section>
 
-<h1>Din Demokrati</h1>
+  <section>
+    <h2>Senaste lagförslag</h2>
 
-<p>
-Följ lagförslag, propositioner och omröstningar i Sveriges riksdag.
-</p>
+    {
+      latestDocs.length > 0 ? (
+        <div class="article-grid">
+          {latestDocs.map((doc) => (
+            <ArticleCard
+              title={doc.titel}
+              summary={doc.subtitel || ""}
+              date={doc.datum}
+              url={`/lagforslag/${doc.dok_id}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <p>Inga lagförslag kunde hämtas just nu.</p>
+      )
+    }
+  </section>
 
-</section>
+  <section>
+    <h2>Vad händer i riksdagen</h2>
 
-<section>
-
-<h2>Senaste lagförslag</h2>
-
-<div class="article-grid">
-
-{latestDocs.map((doc) => (
-
-<ArticleCard
-title={doc.titel}
-date={doc.datum}
-url={`/lagforslag/${doc.dok_id}`}
-/>
-
-))}
-
-</div>
-
-</section>
-
-<section>
-
-<h2>Vad händer i riksdagen</h2>
-
-<Timeline steps={timeline} />
-
-</section>
-
+    <Timeline items={timeline} />
+  </section>
 </MainLayout>
