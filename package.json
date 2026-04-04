@@ -1,8 +1,8 @@
 {
-	"name": "astro-blog-starter-template",
-	"description": "Build a personal website, blog, or portfolio with Astro.",
+	"name": "dindemokrati",
+	"description": "Din Demokrati, på ett enkelt och fint sätt.",
 	"cloudflare": {
-		"label": "Astro Framework Starter",
+		"label": "Din Demokrati",
 		"products": [
 			"Workers"
 		],
