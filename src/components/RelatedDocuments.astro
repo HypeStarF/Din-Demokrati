@@ -1,0 +1,13 @@
+---
+const { documentIds = [] } = Astro.props;
+---
+
+{documentIds.length > 0 && (
+  <section class="related-documents" aria-labelledby="related-documents-heading">
+    <h2 id="related-documents-heading">Fördjupa dig i underlaget</h2>
+    <p>Följ ärendena och läs originaldokumenten i Din Demokratis faktalager.</p>
+    <ul>
+      {documentIds.map((id) => <li><a href={`/lagforslag/${id}`}>Riksdagsdokument {id}</a></li>)}
+    </ul>
+  </section>
+)}

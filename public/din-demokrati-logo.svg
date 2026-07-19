@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-labelledby="title">
+  <title>Din Demokrati</title>
+  <rect width="800" height="800" rx="390" fill="#1f48a6"/>
+  <path fill="#fff" d="M100 180h164c119 0 201 76 201 209S383 598 264 598H100zm88 75v268h69c70 0 109-48 109-134 0-87-39-134-109-134z"/>
+  <path fill="#ffd21f" d="M400 232h125c133 0 228 72 228 209S658 651 525 651H400V563h87V308h-87zm87 76v266h39c68 0 109-46 109-133s-41-133-109-133z"/>
+  <path fill="#fff" d="M453 92h183c0 0 0 0 0 0v120c0 11-9 20-20 20h-58l-69 56v-56h-16c-11 0-20-9-20-20z"/>
+  <rect x="489" y="137" width="109" height="13" rx="5" fill="#1f48a6"/><rect x="489" y="165" width="109" height="13" rx="5" fill="#1f48a6"/>
+</svg>

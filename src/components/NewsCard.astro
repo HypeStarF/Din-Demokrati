@@ -1,0 +1,23 @@
+---
+import ContentBadge from "./ContentBadge.astro";
+
+const { article, featured = false } = Astro.props;
+const date = new Intl.DateTimeFormat("sv-SE", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+}).format(article.data.publishedAt);
+---
+
+<article class:list={["news-card", { "news-card--featured": featured }]}>
+  <a class="news-card__visual" href={`/nyheter/${article.id}`} aria-label={`Läs ${article.data.title}`}>
+    <span class={`news-card__shape news-card__shape--${article.data.type}`}></span>
+    <span class="news-card__mark" aria-hidden="true">DD</span>
+  </a>
+  <div class="news-card__body">
+    <div class="news-card__meta"><ContentBadge type={article.data.type} /> <span>{article.data.category}</span></div>
+    <h2><a href={`/nyheter/${article.id}`}>{article.data.title}</a></h2>
+    <p>{article.data.description}</p>
+    <div class="news-card__footer"><span>{date}</span><span>{article.data.author}</span></div>
+  </div>
+</article>

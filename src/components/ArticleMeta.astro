@@ -1,0 +1,16 @@
+---
+import ContentBadge from "./ContentBadge.astro";
+
+const { article } = Astro.props;
+const formatDate = (date: Date) => new Intl.DateTimeFormat("sv-SE", {
+  year: "numeric", month: "long", day: "numeric"
+}).format(date);
+---
+
+<div class="article-meta">
+  <ContentBadge type={article.data.type} />
+  <span>{article.data.category}</span>
+  <span>Publicerad {formatDate(article.data.publishedAt)}</span>
+  {article.data.updatedAt && <span>Uppdaterad {formatDate(article.data.updatedAt)}</span>}
+  <span>Av {article.data.author}</span>
+</div>

@@ -1,0 +1,45 @@
+---
+import { getCollection, render } from "astro:content";
+import MainLayout from "../../layouts/MainLayout.astro";
+import ArticleMeta from "../../components/ArticleMeta.astro";
+import Sources from "../../components/Sources.astro";
+import RelatedDocuments from "../../components/RelatedDocuments.astro";
+import NewsCard from "../../components/NewsCard.astro";
+
+export async function getStaticPaths() {
+  const articles = await getCollection("articles");
+  return articles.map((article) => ({ params: { slug: article.id }, props: { article } }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+const related = (await getCollection("articles"))
+  .filter((candidate) => candidate.id !== article.id && candidate.data.type === article.data.type)
+  .slice(0, 2);
+---
+
+<MainLayout>
+  <article class:list={["article-page", { "article-page--opinion": article.data.type === "opinion" }]}>
+    <header class="article-header">
+      <ArticleMeta article={article} />
+      <h1>{article.data.title}</h1>
+      <p class="article-lead">{article.data.description}</p>
+      {article.data.type === "opinion" && (
+        <p class="opinion-notice"><strong>Detta är en opinionsartikel.</strong> Åsikterna är Din Demokratis.</p>
+      )}
+      {article.data.type === "analys" && (
+        <p class="analysis-notice">Analysen bygger på öppna underlag och Din Demokratis redaktionella bedömning.</p>
+      )}
+    </header>
+    <div class={`article-illustration article-illustration--${article.data.type}`} aria-hidden="true"><span>DD</span></div>
+    <div class="article-content"><Content /></div>
+    <RelatedDocuments documentIds={article.data.relatedDocumentIds} />
+    <Sources sources={article.data.sources} />
+  </article>
+  {related.length > 0 && (
+    <section class="related-articles" aria-labelledby="related-articles-heading">
+      <h2 id="related-articles-heading">Läs också</h2>
+      <div class="article-grid">{related.map((item) => <NewsCard article={item} />)}</div>
+    </section>
+  )}
+</MainLayout>

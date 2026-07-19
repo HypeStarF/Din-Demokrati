@@ -1,0 +1,20 @@
+---
+import { getCollection } from "astro:content";
+import MainLayout from "../../layouts/MainLayout.astro";
+import NewsCard from "../../components/NewsCard.astro";
+
+const articles = (await getCollection("articles")).sort(
+  (a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+);
+---
+
+<MainLayout>
+  <header class="section-heading">
+    <p class="eyebrow">Din Demokrati</p>
+    <h1>Nyheter, analys och förklaringar</h1>
+    <p>Vi följer svensk politik med öppna källor, förklarar besluten och markerar tydligt när vi uttrycker en åsikt.</p>
+  </header>
+  <section class="news-list" aria-label="Alla artiklar">
+    {articles.map((article) => <NewsCard article={article} />)}
+  </section>
+</MainLayout>
