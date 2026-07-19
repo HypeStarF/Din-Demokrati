@@ -1,87 +1,38 @@
 ---
-// @ts-nocheck
 export const prerender = false
 
+import { getCollection } from "astro:content"
 import MainLayout from "../layouts/MainLayout.astro"
-import ArticleCard from "../components/ArticleCard.astro"
-import Timeline from "../components/Timeline.astro"
+import NewsCard from "../components/NewsCard.astro"
+import { getLatestMotions, getLatestPropositions } from "../lib/riksdagen.js"
 
-/* hämta senaste motioner + propositioner direkt från API:t */
+const articles = (await getCollection("articles")).sort(
+  (a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+)
+const featured = articles.find((article) => article.data.featured) ?? articles[0]
+const latest = articles.filter((article) => article.id !== featured?.id).slice(0, 4)
+const byType = (type) => articles.filter((article) => article.data.type === type).slice(0, 3)
 
-const [motRes, propRes] = await Promise.all([
-  fetch(
-    "https://data.riksdagen.se/dokumentlista/?doktyp=mot&sort=datum&sortorder=desc&utformat=json"
-  ),
-  fetch(
-    "https://data.riksdagen.se/dokumentlista/?doktyp=prop&sort=datum&sortorder=desc&utformat=json"
-  )
-])
-
-const motData = await motRes.json()
-const propData = await propRes.json()
-
-const motDocsRaw = motData?.dokumentlista?.dokument ?? []
-const propDocsRaw = propData?.dokumentlista?.dokument ?? []
-
-const motDocs = Array.isArray(motDocsRaw) ? motDocsRaw : [motDocsRaw]
-const propDocs = Array.isArray(propDocsRaw) ? propDocsRaw : [propDocsRaw]
-
-/* slå ihop, sortera senaste först */
-
-const filtered = [...motDocs, ...propDocs].sort((a, b) => {
-  const aDate = new Date(a?.datum || 0).getTime()
-  const bDate = new Date(b?.datum || 0).getTime()
-  return bDate - aDate
-})
-
-/* senaste dokument */
-
-const latestDocs = filtered.slice(0, 6)
-
-/* tidslinje */
-
-const timeline = latestDocs.map((doc) => ({
-  id: doc.dok_id,
-  title: doc.titel,
-  date: doc.datum,
-  type: doc.doktyp,
-  url: `/lagforslag/${doc.dok_id}`
-}))
+let latestDocs = []
+try {
+  const [motions, propositions] = await Promise.all([getLatestMotions(), getLatestPropositions()])
+  latestDocs = [...motions, ...propositions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 3)
+} catch {
+  latestDocs = []
+}
 ---
 
 <MainLayout>
-  <section class="hero">
-    <h1>Din Demokrati</h1>
-
-    <p>
-      Följ lagförslag, propositioner och omröstningar i Sveriges riksdag.
-    </p>
+  <section class="home-hero">
+    <div><p class="eyebrow">Din Demokrati</p><h1>Politik blir tydligare när underlaget är öppet.</h1><p>Nyheter, förklaringar, analyser och opinion om besluten som formar Sverige.</p></div>
+    <img src="/din-demokrati-logo.svg" width="180" height="180" alt="Din Demokratis DD-logga" />
   </section>
 
-  <section>
-    <h2>Senaste lagförslag</h2>
-
-    {
-      latestDocs.length > 0 ? (
-        <div class="article-grid">
-          {latestDocs.map((doc) => (
-            <ArticleCard
-              title={doc.titel}
-              summary={doc.subtitel || ""}
-              date={doc.datum}
-              url={`/lagforslag/${doc.dok_id}`}
-            />
-          ))}
-        </div>
-      ) : (
-        <p>Inga lagförslag kunde hämtas just nu.</p>
-      )
-    }
-  </section>
-
-  <section>
-    <h2>Vad händer i riksdagen</h2>
-
-    <Timeline items={timeline} />
-  </section>
+  {featured && <section class="featured-section"><NewsCard article={featured} featured={true} /></section>}
+  <section class="content-section"><div class="section-title"><div><p class="eyebrow">Aktuellt</p><h2>Senaste från Din Demokrati</h2></div><a href="/nyheter">Alla artiklar →</a></div><div class="article-grid">{latest.map((article) => <NewsCard article={article} />)}</div></section>
+  <section class="content-section"><div class="section-title"><div><p class="eyebrow">Förstå frågan</p><h2>Förklarar</h2></div><a href="/nyheter">Fler förklaringar →</a></div><div class="article-grid">{byType("förklarar").map((article) => <NewsCard article={article} />)}</div></section>
+  <section class="content-section two-columns"><div><div class="section-title"><div><p class="eyebrow">Sammanhang</p><h2>Analys</h2></div></div><div class="article-stack">{byType("analys").map((article) => <NewsCard article={article} />)}</div></div><div class="opinion-panel"><p class="eyebrow">Din Demokratis ståndpunkt</p><h2>Opinion</h2><p>Här är våra argumenterande texter. Åsikterna är Din Demokratis och märks alltid tydligt.</p>{byType("opinion").map((article) => <a href={`/nyheter/${article.id}`}>{article.data.title} <span>→</span></a>)}</div></section>
+  <section class="riksdagen-panel"><div><p class="eyebrow">Faktalager</p><h2>Från riksdagen</h2><p>Följ aktuella handlingar och läs originalunderlaget bakom politiken.</p></div>{latestDocs.length > 0 ? <ul>{latestDocs.map((doc) => <li><a href={`/lagforslag/${doc.id}`}><span>{doc.type === "prop" ? "Proposition" : "Motion"}</span>{doc.title}</a></li>)}</ul> : <p>Riksdagsdata kunde inte hämtas just nu.</p>}<a class="button-link" href="/lagforslag">Se alla lagförslag →</a></section>
 </MainLayout>

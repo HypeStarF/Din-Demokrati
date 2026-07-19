@@ -1,0 +1,13 @@
+---
+type ArticleType = "nyhet" | "förklarar" | "analys" | "opinion";
+
+const { type } = Astro.props as { type: ArticleType };
+const labels: Record<ArticleType, string> = {
+  nyhet: "Nyhet",
+  förklarar: "Förklarar",
+  analys: "Analys",
+  opinion: "Opinion",
+};
+---
+
+<span class:list={["content-badge", `content-badge--${type}`]}>{labels[type]}</span>
