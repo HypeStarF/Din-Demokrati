@@ -45,25 +45,29 @@ async function getLatestDocumentsByType(doktyp, maxStart = 200) {
   const results = [];
   const seen = new Set();
 
-  for (let start = 0; start <= maxStart; start += 100) {
-    const startParam = start === 0 ? "" : `&start=${start}`;
+  try {
+    for (let start = 0; start <= maxStart; start += 100) {
+      const startParam = start === 0 ? "" : `&start=${start}`;
 
-    const data = await safeFetch(
-      `${BASE}/dokumentlista/?doktyp=${doktyp}&sort=datum&sortorder=desc&utformat=json${startParam}`
-    );
+      const data = await safeFetch(
+        `${BASE}/dokumentlista/?doktyp=${doktyp}&sort=datum&sortorder=desc&utformat=json${startParam}`
+      );
 
-    const docs = ensureArray(data?.dokumentlista?.dokument);
+      const docs = ensureArray(data?.dokumentlista?.dokument);
 
-    if (docs.length === 0) {
-      break;
-    }
+      if (docs.length === 0) {
+        break;
+      }
 
-    for (const doc of docs) {
-      if (!seen.has(doc.dok_id)) {
-        seen.add(doc.dok_id);
-        results.push(doc);
+      for (const doc of docs) {
+        if (!seen.has(doc.dok_id)) {
+          seen.add(doc.dok_id);
+          results.push(doc);
+        }
       }
     }
+  } catch (err) {
+    console.error(`Kunde inte hämta ${doktyp}-dokument från Riksdagens API:`, err);
   }
 
   results.sort(

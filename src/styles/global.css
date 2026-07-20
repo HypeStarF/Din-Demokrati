@@ -262,6 +262,39 @@ cursor:pointer;
 background:#ddd;
 }
 
+.filters button[aria-pressed="true"]{
+background:#1B4F9C;
+color:white;
+}
+
+.results-status{
+min-height:1.5rem;
+color:#555;
+}
+
+.empty-state{
+padding:20px;
+background:#f6f8fb;
+border-left:4px solid #1B4F9C;
+}
+
+.page-intro{
+max-width:65ch;
+color:#444;
+}
+
+.visually-hidden{
+position:absolute;
+width:1px;
+height:1px;
+padding:0;
+margin:-1px;
+overflow:hidden;
+clip:rect(0, 0, 0, 0);
+white-space:nowrap;
+border:0;
+}
+
 #results{
 list-style:none;
 padding:0;
