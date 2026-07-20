@@ -5,6 +5,8 @@ getLatestMotions,
 getLatestPropositions
 } from "../../lib/riksdagen.js";
 
+export const prerender = false;
+
 type Document = {
 id:string
 title:string
@@ -24,21 +26,31 @@ const docs = [...motions,...props]
 
 <h1>Lagförslag</h1>
 
+<p class="page-intro">
+  Sök bland de senaste propositionerna och motionerna från Sveriges riksdag.
+</p>
+
 <input
 id="search"
 type="text"
 placeholder="Sök lagförslag..."
 class="search"
+aria-describedby="search-help"
 />
 
-<div class="filters">
+<p id="search-help" class="visually-hidden">Filtrera listan efter titel eller dokumenttyp.</p>
 
-<button data-filter="all">Alla</button>
-<button data-filter="prop">Propositioner</button>
-<button data-filter="mot">Motioner</button>
+<div class="filters" aria-label="Filtrera dokumenttyp">
+
+<button data-filter="all" aria-pressed="true">Alla</button>
+<button data-filter="prop" aria-pressed="false">Propositioner</button>
+<button data-filter="mot" aria-pressed="false">Motioner</button>
 
 </div>
 
+<p id="results-status" class="results-status" aria-live="polite"></p>
+
+{docs.length > 0 ? (
 <ul id="results">
 
 {docs.map(doc => (
@@ -79,6 +91,11 @@ data-title={doc.title.toLowerCase()}
 <button id="next">Nästa →</button>
 
 </div>
+) : (
+<p class="empty-state" role="status">
+  Det gick inte att hämta några lagförslag just nu. Försök igen om en stund.
+</p>
+)}
 
 
 <script>
@@ -90,12 +107,14 @@ const buttons = document.querySelectorAll(".filters button") as NodeListOf<HTMLB
 const prev = document.getElementById("prev") as HTMLButtonElement;
 const next = document.getElementById("next") as HTMLButtonElement;
 const pageInfo = document.getElementById("page-info") as HTMLElement;
+const resultsStatus = document.getElementById("results-status") as HTMLElement;
 
 let currentFilter = "all";
 
 let currentPage = 1;
 const perPage = 10;
 
+if (prev && next && pageInfo && resultsStatus) {
 function getFiltered(){
 
 if(!search) return items;
@@ -134,6 +153,9 @@ item.style.display = "block";
 });
 
 pageInfo.textContent = `Sida ${currentPage} / ${totalPages || 1}`;
+resultsStatus.textContent = filtered.length === 0
+? "Inga lagförslag matchar din sökning."
+: `${filtered.length} lagförslag visas.`;
 
 prev.disabled = currentPage === 1;
 next.disabled = currentPage === totalPages;
@@ -153,6 +175,9 @@ btn.addEventListener("click", () => {
 
 currentFilter = btn.dataset.filter ?? "all";
 currentPage = 1;
+buttons.forEach(button => {
+button.setAttribute("aria-pressed", String(button === btn));
+});
 render();
 
 });
@@ -170,6 +195,7 @@ render();
 });
 
 render();
+}
 
 </script>
 
